@@ -38,3 +38,7 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```bash
 pip install -r requirements.txt
 ```
+### 3) Sanity check for data
+```bash
+python -c "from src.load_data import smoke_test; smoke_test()"
+```
