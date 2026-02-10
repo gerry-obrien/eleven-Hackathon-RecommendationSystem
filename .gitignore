@@ -1,29 +1,27 @@
-# --- Data (do not commit) ---
+# Data (never commit)
 data/
 *.csv
 *.parquet
 *.pkl
 
-# --- Python ---
+# Python
 __pycache__/
 *.py[cod]
-*.so
 *.egg-info/
 build/
 dist/
 
-# --- Virtual environments ---
+# Virtual env
 .venv/
 venv/
-env/
 
-# --- Notebooks ---
+# Notebooks
 .ipynb_checkpoints/
 
-# --- IDE / OS ---
+# IDE / OS
 .vscode/
 .DS_Store
 Thumbs.db
 
-# --- Logs ---
+# Logs
 *.log

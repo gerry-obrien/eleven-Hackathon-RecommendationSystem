@@ -29,18 +29,44 @@ We will produce:
 
 ## Setup
 
-### 1) Create a virtual environment
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-```
-Windows users: use the py launcher (py -m venv .venv). Avoid MSYS2/Git-Bash Python, which can cause SSL/cert issues and force source builds.
+### Windows (recommended: PowerShell)
+```powershell
+# Create venv
+py -m venv .venv
 
-### 2) Install dependencies
-```bash
+# Allow running the activate script (run once per machine)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Activate venv
+& .\.venv\Scripts\Activate.ps1
+
+# Install dependencies
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
-### 3) Sanity check for data
+
+### Windows (Git Bash)
 ```bash
-python -c "from src.load_data import smoke_test; smoke_test()"
+# Create venv
+python -m venv .venv
+
+# Activate venv
+source .venv/bin/activate
+
+# Install dependencies
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### MacOS / Linux
+```bash
+# Create venv
+python3 -m venv .venv
+
+# Activate venv
+source .venv/bin/activate
+
+# Install dependencies
+python3 -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
