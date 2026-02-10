@@ -1,6 +1,4 @@
 # app_eda/components/charts.py
-from __future__ import annotations
-
 import pandas as pd
 import plotly.express as px
 

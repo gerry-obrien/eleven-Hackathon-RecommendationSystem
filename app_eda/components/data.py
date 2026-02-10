@@ -1,6 +1,4 @@
 # app_eda/components/data.py
-from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
 import pandas as pd

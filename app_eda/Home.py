@@ -1,5 +1,11 @@
 # app_eda/Home.py
-from __future__ import annotations
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]  # repo root
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 
 import streamlit as st
 
@@ -7,7 +13,6 @@ from app_eda.components.bootstrap import add_repo_root_to_path
 
 repo_root = add_repo_root_to_path()
 
-from pathlib import Path
 from app_eda.components.data import load_data, enrich_transactions
 from app_eda.components.filters import render_sidebar_filters, apply_filters
 

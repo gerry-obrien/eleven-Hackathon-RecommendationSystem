@@ -1,6 +1,4 @@
 # app_eda/components/filters.py
-from __future__ import annotations
-
 from dataclasses import dataclass
 import pandas as pd
 import streamlit as st
@@ -98,7 +96,20 @@ def apply_filters(txe: pd.DataFrame, f: Filters) -> pd.DataFrame:
     Apply filter object to enriched transactions (txe).
     """
     out = txe
-    out = out[(out["SaleTransactionDate"] >= f.date_min) & (out["SaleTransactionDate"] <= f.date_max)]
+    dt = out["SaleTransactionDate"]
+
+    # Make filter bounds compatible with dt dtype (handles tz-aware UTC vs tz-naive)
+    if getattr(dt.dt, "tz", None) is not None:
+        # dt is tz-aware -> localize bounds to UTC
+        dmin = pd.Timestamp(f.date_min).tz_localize("UTC") if pd.Timestamp(f.date_min).tzinfo is None else pd.Timestamp(f.date_min).tz_convert("UTC")
+        dmax = pd.Timestamp(f.date_max).tz_localize("UTC") if pd.Timestamp(f.date_max).tzinfo is None else pd.Timestamp(f.date_max).tz_convert("UTC")
+    else:
+        # dt is tz-naive -> make bounds tz-naive
+        dmin = pd.Timestamp(f.date_min).tz_localize(None)
+        dmax = pd.Timestamp(f.date_max).tz_localize(None)
+
+    out = out[(dt >= dmin) & (dt <= dmax)]
+
 
     if f.client_countries and "ClientCountry" in out.columns:
         out = out[out["ClientCountry"].astype(str).isin(f.client_countries)]
