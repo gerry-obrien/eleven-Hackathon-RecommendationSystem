@@ -34,6 +34,8 @@ We will produce:
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 ```
+Windows users: use the py launcher (py -m venv .venv). Avoid MSYS2/Git-Bash Python, which can cause SSL/cert issues and force source builds.
+
 ### 2) Install dependencies
 ```bash
 pip install -r requirements.txt
