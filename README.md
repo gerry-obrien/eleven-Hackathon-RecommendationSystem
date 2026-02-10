@@ -1,2 +1,42 @@
-# eleven-Hackathon-RecommendationSystem
-Rec sys
+# eleven Hackathon – Product Recommendation (Case #2: “The Next Purchase”)
+
+# Hackathon – Product Recommendation (Case #2: “The Next Purchase”)
+
+## Project description
+We build a **personalized, stock-aware recommender system** for a sports retail company.
+Using historical transactions and customer/product metadata, the system outputs **Top-K product recommendations per client** (products a client is most likely to buy next), suitable for marketing activation and filtered to recommend **only in-stock products** (by country when possible).
+
+## Data (CSV files)
+Place these files in `data/raw/`:
+
+- `transactions.csv`  
+  Historical purchases with (at least): `ClientID`, `ProductID`, `SaleTransactionDate`, `StoreID`, `Quantity`, `SalesNetAmountEuro`
+- `clients.csv`  
+  Customer attributes: segment, country, opt-ins, gender, age, etc.
+- `products.csv`  
+  Product catalog metadata: category / family / universe, etc.
+- `stores.csv`  
+  Store metadata: `StoreID` → `StoreCountry`
+- `stocks.csv`  
+  Available stock by country/product: `StoreCountry`, `ProductID`, `Quantity`
+
+## Deliverables
+We will produce:
+1) **Recommendation output**: for each client, a ranked **Top-K list of ProductIDs**, applying stock constraints.
+2) **EDA & insights**: plots/tables explaining customer behavior, sparsity/cold-start, country/segment differences, stock coverage, and “next purchase” patterns.
+3) **Evaluation**: offline ranking metrics such as **Recall@K / MAP@K / NDCG@K**, with breakdowns by segment/country/cold-start.
+4) **Demo-ready component**: a script or lightweight app that shows recommendations for a selected client with brief explanation.
+
+---
+
+## Setup
+
+### 1) Create a virtual environment
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+```
+### 2) Install dependencies
+```bash
+pip install -r requirements.txt
+```
