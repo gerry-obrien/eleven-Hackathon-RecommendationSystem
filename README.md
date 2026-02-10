@@ -1,7 +1,5 @@
 # eleven Hackathon – Product Recommendation (Case #2: “The Next Purchase”)
 
-# Hackathon – Product Recommendation (Case #2: “The Next Purchase”)
-
 ## Project description
 We build a **personalized, stock-aware recommender system** for a sports retail company.
 Using historical transactions and customer/product metadata, the system outputs **Top-K product recommendations per client** (products a client is most likely to buy next), suitable for marketing activation and filtered to recommend **only in-stock products** (by country when possible).
