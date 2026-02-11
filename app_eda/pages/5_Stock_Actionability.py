@@ -93,3 +93,15 @@ else:
     st.info("ClientCountry missing; cannot simulate stock filter impact per client.")
 
 st.caption("Business value: quantifies operational readiness and motivates stock-aware candidate filtering to avoid wasted impressions and poor customer experience.")
+
+st.divider()
+
+st.markdown(
+    """
+### Conclusion
+Stock limits how “actionable” recommendations are. Stock coverage differs a lot by country, so availability cannot be assumed to be the same everywhere.  
+When we start from a global Top-K list and apply a stock filter, the list shrinks: for **K = 10**, the average client keeps **8.89** items and only **77.1%** of clients still have a full Top-10 available.  
+This shows we should make the recommender **stock-aware** (filter or backfill with in-stock alternatives) to avoid missing items, wasted impressions, and a poor customer experience that can increase churn.
+There is also no stock data for Brazil (Do we assume this means no stock or just no data?)
+"""
+)

@@ -63,3 +63,19 @@ else:
     st.info("Opt-in columns not found in clients table.")
 
 st.caption("Business value: cold-start share tells us how much value comes from generic vs personalized approaches, and opt-in rates define reachable marketing volume.")
+
+
+st.divider()
+
+st.markdown(
+    """
+### Conclusion
+Customer history is sparse: the median customer has only **2 transactions**, and **~65%** have **1–2** purchases.  
+This means “cold start” is the *default*, not the exception—so the recommender should be **hybrid/tiered**:
+- **1–2 transactions:** popularity (by country/segment) + simple item-to-item similarity
+- **3–5 transactions:** stronger “customers also bought” personalization
+- **6+ transactions:** fully personalized ranking approaches
+
+Opt-in rates (~**44% email**, **40% phone**) also cap how many customers we can reach via CRM activation, so impact should be reported by **history bucket** and **reachable volume**.
+"""
+)

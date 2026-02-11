@@ -62,3 +62,14 @@ out = pd.DataFrame(
 st.dataframe(out, use_container_width=True)
 
 st.caption("Business value: clean joins and known data limitations let us propose a robust, defensible recommender design.")
+
+st.divider()
+
+st.markdown(
+    """
+### Conclusion
+- **Joins are complete** across clients/products/stores, so the enriched transactions view is reliable for analysis and model building.
+- **Main limitation: demographics** — age is missing for most users, so insights and recommendations should be driven primarily by transaction behavior and product taxonomy, with demographics treated as optional (and “unknown” handled explicitly).
+- **Marketing reach constraint:** email/phone opt-in is only moderate, which affects how many users can receive recommendations via CRM channels.
+"""
+)

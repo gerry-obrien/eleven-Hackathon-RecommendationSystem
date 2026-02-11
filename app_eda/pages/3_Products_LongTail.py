@@ -63,3 +63,15 @@ if "SalesNetAmountEuro" in txf.columns and "Category" in txf.columns:
     st.plotly_chart(bar(rev, "Category", "revenue", "Revenue by category (top 15)"), use_container_width=True)
 
 st.caption("Business value: long-tail structure motivates personalized retrieval+ranking, improving conversion vs generic best-seller pushes.")
+
+import streamlit as st
+
+st.divider()
+
+st.markdown(
+    """
+### Conclusion (Retention-focused)
+Product demand is strongly **long-tailed**: a small number of items are bought very frequently, while most products are purchased only rarely.  
+This directly supports the need for a recommender: in a large catalog with a long tail, customers will not naturally discover the “right” items, and generic best-seller lists quickly become repetitive and irrelevant for repeat shoppers. To reduce churn, we should rank items by **personal relevance**—matching each client’s demonstrated interests (e.g., categories/brands/price band) to maximize their **probability of buying**—with a small, controlled amount of exploration to keep recommendations fresh and avoid fatigue. The goal is **repeat purchase likelihood and retention**, not revenue.
+"""
+)

@@ -50,29 +50,91 @@ if "ClientSegment" in txf.columns and "Category" in txf.columns:
 else:
     st.info("Need ClientSegment and Category columns.")
 
-st.subheader("Average basket value proxy (SalesNetAmountEuro) by segment/country")
-if "SalesNetAmountEuro" in txf.columns:
-    dims = []
-    if "ClientCountry" in txf.columns:
-        dims.append("ClientCountry")
-    if "ClientSegment" in txf.columns:
-        dims.append("ClientSegment")
+# --- 3rd figure: True basket value proxy by country + segment (with legend) ---
+import plotly.express as px
 
-    if dims:
-        agg = (
-            txf.groupby(dims)["SalesNetAmountEuro"]
-            .mean()
-            .rename("avg_sales_net")
-            .reset_index()
-            .sort_values("avg_sales_net", ascending=False)
-            .head(25)
-        )
-        x = dims[0]
-        st.plotly_chart(bar(agg, x=x, y="avg_sales_net", title="Avg SalesNetAmountEuro (top groups)"), use_container_width=True)
-        st.dataframe(agg, use_container_width=True)
-    else:
-        st.info("No segment/country columns found for grouping.")
-else:
+st.subheader("Average basket value proxy (sum of SalesNetAmountEuro per shopping trip) by country & segment")
+
+if "SalesNetAmountEuro" not in txf.columns:
     st.info("SalesNetAmountEuro not found.")
+elif not all(c in txf.columns for c in ["ClientID", "StoreID", "SaleTransactionDate"]):
+    st.info("Need ClientID, StoreID, and SaleTransactionDate to build a basket proxy.")
+elif "ClientCountry" not in txf.columns or "ClientSegment" not in txf.columns:
+    st.info("Need ClientCountry and ClientSegment to compare basket value by group.")
+else:
+    t = txf.copy()
 
-st.caption("Business value: segment/country heterogeneity supports targeted messaging and local assortments—key drivers of conversion and retention.")
+    # Ensure datetime and create a basket key
+    t["SaleTransactionDate"] = pd.to_datetime(t["SaleTransactionDate"], errors="coerce")
+    t["basket_date"] = t["SaleTransactionDate"].dt.date  # proxy for one shopping trip/day
+
+    # Drop unusable rows
+    t = t.dropna(subset=["ClientID", "StoreID", "basket_date", "SalesNetAmountEuro", "ClientCountry", "ClientSegment"])
+
+    # Build pseudo-baskets: one basket per (ClientID, StoreID, date)
+    baskets = (
+        t.groupby(["ClientID", "StoreID", "basket_date"], as_index=False)
+         .agg(
+             basket_value=("SalesNetAmountEuro", "sum"),
+             n_lines=("ProductID", "nunique") if "ProductID" in t.columns else ("SalesNetAmountEuro", "size"),
+             n_items=("Quantity", "sum") if "Quantity" in t.columns else ("SalesNetAmountEuro", "size"),
+         )
+    )
+
+    # Attach segment + country (client-level attributes)
+    meta = (
+        t[["ClientID", "ClientCountry", "ClientSegment"]]
+        .drop_duplicates(subset=["ClientID"])
+    )
+    baskets = baskets.merge(meta, on="ClientID", how="left").dropna(subset=["ClientCountry", "ClientSegment"])
+
+    # Aggregate basket value by country + segment
+    agg = (
+        baskets.groupby(["ClientCountry", "ClientSegment"], as_index=False)
+               .agg(
+                   avg_basket_value=("basket_value", "mean"),
+                   median_basket_value=("basket_value", "median"),
+                   n_baskets=("basket_value", "size"),
+               )
+    )
+
+    # Keep chart readable: top 10 countries by basket count
+    top_countries = (
+        baskets["ClientCountry"].value_counts().head(10).index.tolist()
+    )
+    agg_plot = agg[agg["ClientCountry"].isin(top_countries)].copy()
+
+    # Plot with legend (one color per segment)
+    fig = px.bar(
+        agg_plot,
+        x="ClientCountry",
+        y="avg_basket_value",
+        color="ClientSegment",
+        barmode="group",
+        title="Avg basket value (proxy) by country and segment (top countries)",
+        hover_data={"n_baskets": True, "median_basket_value": True},
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Table for transparency
+    st.dataframe(
+        agg.sort_values(["ClientCountry", "avg_basket_value"], ascending=[True, False]),
+        use_container_width=True
+    )
+
+    st.caption(
+        "Basket proxy groups line-items into one shopping trip using (ClientID, StoreID, date). "
+        "This is a practical approximation when no BasketID/OrderID exists."
+    )
+
+st.divider()
+
+st.markdown(
+    """
+### Conclusion
+These charts show clear differences in buying behaviour across **countries** and **customer segments**.  
+The category mix changes by country, so “one global list” will not fit every market. The category mix also changes by segment (TOP customers buy different types of products than LOYAL and INACTIVE_1Y). Finally, the basket-value proxy shows that **TOP customers spend much more per shopping trip** in every country.  
+Overall, this supports using **country- and segment-aware recommendations** to keep items relevant and increase repeat purchases (reduce churn).
+"""
+)
+
