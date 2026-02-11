@@ -70,3 +70,14 @@ source .venv/bin/activate
 python3 -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+## Run the EDA App (Streamlit)
+
+This repo includes an internal Streamlit app for exploring the dataset and building the business case for a stock-aware recommendation system.
+
+From the repo root (after setup and with CSVs placed in `data/raw/`):
+
+```bash
+streamlit run app_eda/Home.py
+```
+
