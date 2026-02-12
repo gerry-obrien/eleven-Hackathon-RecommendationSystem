@@ -19,7 +19,8 @@ from app_demo.components.demo_data import (
     get_days_since_last_purchase,
     annotate_stock,
     risk_label,
-    get_purchase_count,
+    repeat_recs_from_predict_py,
+    purchase_count_for_client,
     cold_start_recs_from_cli,
 )
 
@@ -41,7 +42,7 @@ st.sidebar.header("Demo controls")
 st.sidebar.header("Demo controls")
 
 # Keep one known-good example ID for easy copy/paste during a demo
-example_id = demo_recs["ClientID"].iloc[0]
+example_id = "4508698145640552159"
 
 client_id_str = st.sidebar.text_input(
     "ClientID (type/paste)",
@@ -59,8 +60,8 @@ client_id = int(client_id_str)
 k = st.sidebar.slider("Top-K", 5, 10, 10, 1)
 stock_only = st.sidebar.checkbox("Only show in-stock items (if stock coverage exists)", value=True)
 
-purchase_count = get_purchase_count(client_id)
-is_cold_start = purchase_count == 0
+purchase_count = purchase_count_for_client(client_id)
+is_cold_start = (purchase_count == 0)
 
 # Client metadata
 crow = get_client_row(client_id)
@@ -77,17 +78,20 @@ st.caption(f"Demo timeline: treating **{dataset_today().date()}** as 'today' (ma
 if is_cold_start:
     rec_ids = cold_start_recs_from_cli(client_id, k=k)
 else:
-    if client_id_str in set(demo_recs["ClientID"]):
-        rec_ids = get_client_rec_ids(demo_recs, client_id_str, k=k)
-    else:
-        st.warning(
-            "This client has purchases, but is not in the demo CSV mapping. "
-            "For now, please use one of the demo CSV ClientIDs for repeat-customer recommendations."
-        )
-        rec_ids = []
+    rec_ids = repeat_recs_from_predict_py(client_id, k=k)
+
+if not rec_ids:
+    st.warning("No recommendations were returned for this client.")
 
 rec_df = pd.DataFrame({"rank": range(1, len(rec_ids) + 1), "ProductID": rec_ids})
+
+# Normalize dtypes to avoid int/str merge failures
+rec_df["ProductID"] = rec_df["ProductID"].astype(str)
+product_lu = product_lu.copy()
+product_lu["ProductID"] = product_lu["ProductID"].astype(str)
+
 rec_df = rec_df.merge(product_lu, on="ProductID", how="left")
+
 rec_df = annotate_stock(rec_df, client_country)
 
 if stock_only and "StockStatus" in rec_df.columns:

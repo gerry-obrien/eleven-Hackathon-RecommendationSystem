@@ -16,8 +16,7 @@ serving **personalized**, **country/segment-aware**, and optionally **in-stock**
 
 Use the pages in the left sidebar:
 1. **Client Demo** — the main live demo
-2. **Country / Segment Distribution** — shows recommendations differ across groups
-3. **Business Value** — simple churn-focused KPIs + scenario calculator
+2. **Business Value** — simple churn-focused KPIs + scenario calculator
 """
 )
 
