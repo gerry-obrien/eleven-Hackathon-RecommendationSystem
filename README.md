@@ -43,6 +43,10 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 # Install dependencies
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+
+# Train cold-start model (clients with 0 previous purchases)
+# Run once to generate the model artifacts used by the demo UI
+python -m src.newby_reco.reco_refacto --train
 ```
 
 ### Windows (Git Bash)
@@ -56,6 +60,10 @@ source .venv/bin/activate
 # Install dependencies
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+
+# Train cold-start model (clients with 0 previous purchases)
+# Run once to generate the model artifacts used by the demo UI
+python -m src.newby_reco.reco_refacto --train
 ```
 
 ### MacOS / Linux
@@ -69,6 +77,10 @@ source .venv/bin/activate
 # Install dependencies
 python3 -m pip install --upgrade pip
 pip install -r requirements.txt
+
+# Train cold-start model (clients with 0 previous purchases)
+# Run once to generate the model artifacts used by the demo UI
+python3 -m src.newby_reco.reco_refacto --train
 ```
 
 ## Run the EDA App (Streamlit)
@@ -81,3 +93,10 @@ From the repo root (after setup and with CSVs placed in `data/raw/`):
 streamlit run app_eda/Home.py
 ```
 
+## Run the Client Demo App (Streamlit)
+
+From the repo root (after setup and with CSVs placed in `data/raw/`):
+
+```bash
+streamlit run app_demo/Home.py
+```
