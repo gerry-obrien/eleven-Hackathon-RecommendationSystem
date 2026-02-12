@@ -19,7 +19,10 @@ from app_demo.components.demo_data import (
     get_days_since_last_purchase,
     annotate_stock,
     risk_label,
+    get_purchase_count,
+    cold_start_recs_from_cli,
 )
+
 
 st.set_page_config(page_title="Client Demo", layout="wide")
 
@@ -40,6 +43,8 @@ k = st.sidebar.slider("Top-K", 5, 10, 10, 1)
 stock_only = st.sidebar.checkbox("Only show in-stock items (if stock coverage exists)", value=True)
 
 client_id = int(client_id_str)
+purchase_count = get_purchase_count(client_id)
+is_cold_start = purchase_count == 0
 
 # Client metadata
 crow = get_client_row(client_id)
@@ -53,7 +58,13 @@ from app_demo.components.demo_data import dataset_today
 st.caption(f"Demo timeline: treating **{dataset_today().date()}** as 'today' (max transaction date in dataset).")
 
 # Recommendations
-rec_ids = get_client_rec_ids(demo_recs, client_id_str, k=k)
+if is_cold_start:
+    # Cold-start model (0 previous purchases)
+    rec_ids = cold_start_recs_from_cli(client_id, k=k)
+else:
+    # Multi-purchase model (current behavior: demo CSV / your existing logic)
+    rec_ids = get_client_rec_ids(demo_recs, client_id_str, k=k)
+
 rec_df = pd.DataFrame({"rank": range(1, len(rec_ids) + 1), "ProductID": rec_ids})
 rec_df = rec_df.merge(product_lu, on="ProductID", how="left")
 rec_df = annotate_stock(rec_df, client_country)
@@ -73,6 +84,8 @@ with left:
         st.metric("Country", client_country if client_country else "—")
     with c2:
         st.metric("Segment", client_segment if client_segment else "—")
+        
+    st.metric("Purchase count", f"{purchase_count}")
 
     c3, c4 = st.columns(2)
     with c3:
@@ -83,7 +96,11 @@ with left:
     st.caption(help_text)
 
     st.subheader("Recent purchases (last 5)")
-    st.dataframe(get_recent_purchases(client_id, n=5), use_container_width=True)
+    if is_cold_start:
+        st.write("**No previous purchases.**")
+    else:
+        st.dataframe(get_recent_purchases(client_id, n=5), use_container_width=True)
+
 
 with right:
     st.subheader(f"Top {k} recommendations")

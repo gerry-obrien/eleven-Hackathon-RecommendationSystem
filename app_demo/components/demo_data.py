@@ -269,3 +269,65 @@ def risk_label(days_since_last: Optional[int], segment: Optional[str]) -> Tuple[
     if days_since_last <= max(p75 * 2, p75 + 14):
         return ("Getting late", f"Past typical window for {segment}; intervention may help.")
     return ("At risk", f"Well past typical window for {segment}; churn risk higher.")
+
+import json
+import subprocess
+from typing import List
+
+def get_purchase_count(client_id: int) -> int:
+    """
+    Returns number of transactions found for a client in the enriched transactions table.
+    """
+    txe = load_enriched_transactions()
+    return int((txe["ClientID"] == client_id).sum())
+
+
+@st.cache_data
+def cold_start_recs_from_cli(client_id: int, k: int = 10) -> List[int]:
+    """
+    Calls your teammate's cold-start CLI and parses ProductIDs from stdout.
+    Assumes the module prints either JSON or a whitespace/newline-separated list of IDs.
+    """
+    cmd = [
+        "python",
+        "-m",
+        "src.newby_reco.reco_refacto",
+        "--client_id",
+        str(client_id),
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+
+    if res.returncode != 0:
+        raise RuntimeError(
+            f"Cold-start CLI failed.\n\nSTDERR:\n{res.stderr}\n\nSTDOUT:\n{res.stdout}"
+        )
+
+    out = (res.stdout or "").strip()
+    if not out:
+        return []
+
+    # Try JSON first (common)
+    # Examples we handle:
+    # - [1,2,3]
+    # - {"recommendations":[...]}
+    # - {"ProductID":[...]}
+    try:
+        obj = json.loads(out.splitlines()[-1])
+        if isinstance(obj, list):
+            recs = obj
+        elif isinstance(obj, dict):
+            recs = obj.get("recommendations") or obj.get("ProductID") or obj.get("recs") or []
+        else:
+            recs = []
+        recs = [int(x) for x in recs][:k]
+        return recs
+    except Exception:
+        pass
+
+    # Fallback: parse integers from any text output
+    tokens = []
+    for line in out.splitlines():
+        for tok in line.replace(",", " ").split():
+            if tok.isdigit():
+                tokens.append(int(tok))
+    return tokens[:k]
