@@ -49,6 +49,9 @@ client_segment = crow["ClientSegment"].iloc[0] if (len(crow) and "ClientSegment"
 days_since = get_days_since_last_purchase(client_id)
 label, help_text = risk_label(days_since, client_segment)
 
+from app_demo.components.demo_data import dataset_today
+st.caption(f"Demo timeline: treating **{dataset_today().date()}** as 'today' (max transaction date in dataset).")
+
 # Recommendations
 rec_ids = get_client_rec_ids(demo_recs, client_id_str, k=k)
 rec_df = pd.DataFrame({"rank": range(1, len(rec_ids) + 1), "ProductID": rec_ids})
@@ -85,9 +88,20 @@ with left:
 with right:
     st.subheader(f"Top {k} recommendations")
     # show most useful columns first if present
-    preferred = ["rank", "ProductID", "ProductName", "Category", "StockStatus"]
-    cols = [c for c in preferred if c in rec_df.columns] + [c for c in rec_df.columns if c not in preferred]
+    # For recommendations, show the taxonomy columns directly (no long ProductLabel)
+    preferred = [
+        "rank",
+        "ProductID",
+        "Universe",
+        "FamilyLevel1",
+        "FamilyLevel2",
+        "Category",
+        "StockStatus",
+    ]
+
+    cols = [c for c in preferred if c in rec_df.columns]
     st.dataframe(rec_df[cols], use_container_width=True)
+
 
     st.caption(
         "Demo notes: 'Risk' is a simple rule using segment-level repeat timing (p75 of interpurchase gaps). "

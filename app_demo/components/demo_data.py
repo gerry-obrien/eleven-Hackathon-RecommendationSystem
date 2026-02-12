@@ -54,6 +54,25 @@ def get_client_rec_ids(demo_recs: pd.DataFrame, client_id: str, k: int = 10) -> 
     return rec_ids
 
 
+@st.cache_data
+def dataset_today() -> pd.Timestamp:
+    """
+    Use the most recent transaction date in the dataset as "today" for demo purposes.
+    This prevents days-since-last being inflated when the dataset is historical.
+    """
+    txe = load_enriched_transactions()
+    date_col = _safe_col(txe, ["SaleTransactionDate", "Date", "TransactionDate"])
+    if date_col is None:
+        return pd.Timestamp.today().normalize()
+
+    d = pd.to_datetime(txe[date_col], errors="coerce", utc=True).dt.tz_convert(None)
+    d = d.dropna()
+    if d.empty:
+        return pd.Timestamp.today().normalize()
+
+    return d.max().normalize()
+
+
 # ---------- Metadata helpers ----------
 def _safe_col(df: pd.DataFrame, candidates) -> Optional[str]:
     for c in candidates:
@@ -65,13 +84,31 @@ def _safe_col(df: pd.DataFrame, candidates) -> Optional[str]:
 @st.cache_data
 def build_product_lookup() -> pd.DataFrame:
     data = load_private_data()
-    products = data.products.copy()
+    p = data.products.copy()
 
-    cols = ["ProductID"]
-    for c in ["ProductName", "Category", "Family", "Universe"]:
-        if c in products.columns:
-            cols.append(c)
-    return products[cols]
+    # Your products.csv has these columns (no ProductName):
+    # ProductID, Category, FamilyLevel1, FamilyLevel2, Universe
+    keep = ["ProductID"]
+    for c in ["Universe", "FamilyLevel1", "FamilyLevel2", "Category"]:
+        if c in p.columns:
+            keep.append(c)
+
+    out = p[keep].copy()
+
+    # Create a UI-friendly label (acts like "product name")
+    # Example: "Universe > FamilyLevel1 > FamilyLevel2"
+    label_parts = [c for c in ["Universe", "FamilyLevel1", "FamilyLevel2"] if c in out.columns]
+    if label_parts:
+        out["ProductLabel"] = (
+            out[label_parts]
+            .astype(str)
+            .agg(" > ".join, axis=1)
+        )
+    else:
+        out["ProductLabel"] = out["ProductID"].astype(str)
+
+    return out
+
 
 
 def get_client_row(client_id: int) -> pd.DataFrame:
@@ -85,11 +122,16 @@ def get_recent_purchases(client_id: int, n: int = 5) -> pd.DataFrame:
 
     date_col = _safe_col(t, ["SaleTransactionDate", "Date", "TransactionDate"])
     if date_col is not None:
-        t[date_col] = pd.to_datetime(t[date_col], errors="coerce")
+        t[date_col] = pd.to_datetime(t[date_col], errors="coerce", utc=True).dt.tz_convert(None)
         t = t.sort_values(date_col, ascending=False)
 
+    # Add product name if available
+    prod_lu = build_product_lookup()
+    t = t.merge(prod_lu, on="ProductID", how="left")
+
+    # Choose display columns
     show_cols = []
-    for c in [date_col, "ProductID", "Category", "SalesNetAmountEuro", "Quantity"]:
+    for c in [date_col, "ProductID", "ProductLabel", "Category", "SalesNetAmountEuro", "Quantity"]:
         if c and c in t.columns and c not in show_cols:
             show_cols.append(c)
 
@@ -102,13 +144,17 @@ def get_days_since_last_purchase(client_id: int) -> Optional[int]:
     date_col = _safe_col(t, ["SaleTransactionDate", "Date", "TransactionDate"])
     if date_col is None:
         return None
-    t[date_col] = pd.to_datetime(t[date_col], errors="coerce")
+
+    t[date_col] = pd.to_datetime(t[date_col], errors="coerce", utc=True).dt.tz_convert(None)
     t = t.dropna(subset=[date_col])
     if t.empty:
         return None
-    last_dt = t[date_col].max()
-    # "today" based on local run; good enough for demo UI
-    return int((pd.Timestamp.today().normalize() - last_dt.normalize()).days)
+
+    last_dt = t[date_col].max().normalize()
+    today = dataset_today()
+    return int((today - last_dt).days)
+
+
 
 
 # ---------- Stock map + stock checks ----------
