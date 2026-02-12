@@ -81,3 +81,89 @@ From the repo root (after setup and with CSVs placed in `data/raw/`):
 streamlit run app_eda/Home.py
 ```
 
+## Static Slide Plot Export
+
+Generate the slide-ready heavy-tail chart from raw data:
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py
+```
+
+Default output:
+
+```text
+plots/heavy_tail_transactions_per_client_clip50.png
+```
+
+Optional overrides:
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --clip-upper 34 --color "#5c8bc3" --dpi 300
+```
+
+To match Streamlit-like bin density, keep `--nbins 50` (default):
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --clip-upper 50 --nbins 50
+```
+
+For non-16:9 placeholders in slides, you can tune figure dimensions:
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --clip-upper 34 --nbins 50 --fig-width 12 --fig-height 8 --dpi 220 --out-name heavy_tail_transactions_per_client_clip34_slide_fit.png
+```
+
+Saved preset for the 1.45 slide fit:
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --clip-upper 34 --nbins 50 --preset slide_fit_145
+```
+
+Deeper strategy-focused chart for "Distribution of past purchases":
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --chart past_purchase_strategy --clip-upper 34 --nbins 50 --preset slide_fit_145
+```
+
+Comprehensive slide dimension (large center panel, ~1.44 aspect):
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --chart past_purchase_strategy --clip-upper 34 --nbins 50 --fig-width 13 --fig-height 9 --dpi 220 --out-name past_purchase_strategy_clip34_comprehensive_slide.png
+```
+
+Wider center-panel aspect (for short/tall-constrained frames):
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --chart past_purchase_strategy --clip-upper 34 --nbins 50 --preset comprehensive_wide_220
+```
+
+Comprehensive Country x Segment executive slide:
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --chart country_segment_comprehensive --preset country_segment_exec_wide
+```
+
+Default output artifact:
+
+```text
+plots/country_segment_comprehensive_exec.png
+```
+
+Stretched aspect ratio for wide/short slide placeholders:
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --chart country_segment_comprehensive --fig-width 20 --fig-height 8.4 --dpi 220 --out-name country_segment_comprehensive_exec_stretched.png
+```
+
+Stock actionability executive slide:
+
+```powershell
+.venv\Scripts\python.exe scripts/export_slide_plots.py --chart stock_actionability --preset stock_actionability_exec
+```
+
+Default output artifact:
+
+```text
+plots/stock_actionability_exec.png
+```
+
