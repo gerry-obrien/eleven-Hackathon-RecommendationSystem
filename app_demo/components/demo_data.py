@@ -349,3 +349,50 @@ def cold_start_recs_from_cli(client_id: int, k: int = 10, raw_dir: str = "data/r
     # Keep order as produced by the model, take top k
     rec_ids = df["ProductID"].dropna().astype("int64").tolist()
     return rec_ids[:k]
+
+import subprocess
+from pathlib import Path
+import pandas as pd
+import streamlit as st
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+@st.cache_data
+def repeat_recs_from_predict_py(client_id: int, k: int = 10) -> list[int]:
+    """
+    Runs: python src/predict.py <client_id>
+    Then reads: output/recs_<client_id>.csv (written by predict.py)
+    """
+    out_dir = REPO_ROOT / "output"
+    out_dir.mkdir(exist_ok=True)
+
+    out_csv = out_dir / f"recs_{client_id}.csv"
+
+    cmd = ["python", "src/predict.py", str(client_id)]
+    res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_ROOT))
+
+    # Even if the script prints warnings, the CSV is the source of truth
+    if not out_csv.exists():
+        raise RuntimeError(
+            f"Repeat model did not create {out_csv}.\n\nSTDERR:\n{res.stderr}\n\nSTDOUT:\n{res.stdout}"
+        )
+
+    df = pd.read_csv(out_csv)
+    if "ProductID" not in df.columns:
+        return []
+
+    # Ensure ints + top-k
+    return df["ProductID"].dropna().astype("int64").head(k).tolist()
+
+import streamlit as st
+
+@st.cache_data
+def purchase_count_for_client(client_id: int) -> int:
+    data = load_private_data()
+    cid = str(client_id)
+
+    # Normalize both sides to string to avoid int/str mismatch
+    tx = data.transactions.copy()
+    tx["ClientID"] = tx["ClientID"].astype(str)
+
+    return int((tx["ClientID"] == cid).sum())

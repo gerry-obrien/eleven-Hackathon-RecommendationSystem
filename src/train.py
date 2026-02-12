@@ -5,7 +5,7 @@ import pickle
 from tqdm import tqdm
 from engine import SegmentRecommender
 
-DATA_PATH = 'data/'
+DATA_PATH = 'data/raw'
 MODEL_PATH = 'models/'
 OUTPUT_PATH = 'output/'
 SAMPLE_SIZE = 500
