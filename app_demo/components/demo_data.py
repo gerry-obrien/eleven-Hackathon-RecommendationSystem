@@ -282,52 +282,70 @@ def get_purchase_count(client_id: int) -> int:
     return int((txe["ClientID"] == client_id).sum())
 
 
-@st.cache_data
-def cold_start_recs_from_cli(client_id: int, k: int = 10) -> List[int]:
-    """
-    Calls your teammate's cold-start CLI and parses ProductIDs from stdout.
-    Assumes the module prints either JSON or a whitespace/newline-separated list of IDs.
-    """
-    cmd = [
-        "python",
-        "-m",
-        "src.newby_reco.reco_refacto",
-        "--client_id",
-        str(client_id),
-    ]
-    res = subprocess.run(cmd, capture_output=True, text=True)
+import re
+import subprocess
+from typing import List
+import streamlit as st
 
-    if res.returncode != 0:
-        raise RuntimeError(
-            f"Cold-start CLI failed.\n\nSTDERR:\n{res.stderr}\n\nSTDOUT:\n{res.stdout}"
+
+import subprocess
+import tempfile
+from pathlib import Path
+from typing import List
+
+import pandas as pd
+import streamlit as st
+
+REPO_ROOT = Path(__file__).resolve().parents[2]  # adjust if your repo root is different
+
+
+@st.cache_data
+def cold_start_recs_from_cli(client_id: int, k: int = 10, raw_dir: str = "data/raw") -> List[int]:
+    """
+    Calls teammate cold-start CLI and reads recommendations via --out_csv.
+    This avoids fragile stdout parsing.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out_csv = Path(tmpdir) / "cold_start_recs.csv"
+
+        cmd = [
+            "python",
+            "-m",
+            "src.newby_reco.reco_refacto",
+            "--raw_dir",
+            raw_dir,
+            "--client_id",
+            str(client_id),
+            "--k_reco",
+            str(k),
+            "--out_csv",
+            str(out_csv),
+        ]
+
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=str(REPO_ROOT),  # important: ensures MODEL_PATH + module paths resolve consistently
         )
 
-    out = (res.stdout or "").strip()
-    if not out:
+        if res.returncode != 0:
+            raise RuntimeError(
+                f"Cold-start CLI failed.\n\nSTDERR:\n{res.stderr}\n\nSTDOUT:\n{res.stdout}"
+            )
+
+        if not out_csv.exists():
+            # CLI ran but didn't write file => show stdout for debugging
+            raise RuntimeError(
+                f"Cold-start CLI did not create {out_csv}.\n\nSTDOUT:\n{res.stdout}\n\nSTDERR:\n{res.stderr}"
+            )
+
+        df = pd.read_csv(out_csv)
+
+    # Expect a ProductID column (as shown in the CLI output)
+    if "ProductID" not in df.columns:
         return []
 
-    # Try JSON first (common)
-    # Examples we handle:
-    # - [1,2,3]
-    # - {"recommendations":[...]}
-    # - {"ProductID":[...]}
-    try:
-        obj = json.loads(out.splitlines()[-1])
-        if isinstance(obj, list):
-            recs = obj
-        elif isinstance(obj, dict):
-            recs = obj.get("recommendations") or obj.get("ProductID") or obj.get("recs") or []
-        else:
-            recs = []
-        recs = [int(x) for x in recs][:k]
-        return recs
-    except Exception:
-        pass
-
-    # Fallback: parse integers from any text output
-    tokens = []
-    for line in out.splitlines():
-        for tok in line.replace(",", " ").split():
-            if tok.isdigit():
-                tokens.append(int(tok))
-    return tokens[:k]
+    # Keep order as produced by the model, take top k
+    rec_ids = df["ProductID"].dropna().astype("int64").tolist()
+    return rec_ids[:k]

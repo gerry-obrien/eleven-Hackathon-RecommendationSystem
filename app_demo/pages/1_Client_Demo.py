@@ -29,8 +29,8 @@ st.set_page_config(page_title="Client Demo", layout="wide")
 st.title("Client Demo")
 st.markdown(
     """
-**Purpose:** Show a single client’s Top-10 recommendations for a live pitch.  
-Focus: **reduce churn** by showing relevant items at the right time, and optionally filtering to **in-stock** items.
+**Purpose:** Show a single client’s Top recommendations.  
+Focus: **reduce churn** by showing relevant items at the right time, and filtering to **in-stock** items.
 """
 )
 
@@ -38,11 +38,27 @@ demo_recs = load_demo_recs()
 product_lu = build_product_lookup()
 
 st.sidebar.header("Demo controls")
-client_id_str = st.sidebar.selectbox("ClientID", demo_recs["ClientID"].tolist())
+st.sidebar.header("Demo controls")
+
+# Keep one known-good example ID for easy copy/paste during a demo
+example_id = demo_recs["ClientID"].iloc[0]
+
+client_id_str = st.sidebar.text_input(
+    "ClientID (type/paste)",
+    value=str(example_id),
+    help="Type a ClientID to test cold-start (0 purchases) vs repeat customers."
+).strip()
+
+# Basic validation
+if not client_id_str.isdigit():
+    st.sidebar.error("ClientID must be numeric.")
+    st.stop()
+
+client_id = int(client_id_str)
+
 k = st.sidebar.slider("Top-K", 5, 10, 10, 1)
 stock_only = st.sidebar.checkbox("Only show in-stock items (if stock coverage exists)", value=True)
 
-client_id = int(client_id_str)
 purchase_count = get_purchase_count(client_id)
 is_cold_start = purchase_count == 0
 
@@ -59,11 +75,16 @@ st.caption(f"Demo timeline: treating **{dataset_today().date()}** as 'today' (ma
 
 # Recommendations
 if is_cold_start:
-    # Cold-start model (0 previous purchases)
     rec_ids = cold_start_recs_from_cli(client_id, k=k)
 else:
-    # Multi-purchase model (current behavior: demo CSV / your existing logic)
-    rec_ids = get_client_rec_ids(demo_recs, client_id_str, k=k)
+    if client_id_str in set(demo_recs["ClientID"]):
+        rec_ids = get_client_rec_ids(demo_recs, client_id_str, k=k)
+    else:
+        st.warning(
+            "This client has purchases, but is not in the demo CSV mapping. "
+            "For now, please use one of the demo CSV ClientIDs for repeat-customer recommendations."
+        )
+        rec_ids = []
 
 rec_df = pd.DataFrame({"rank": range(1, len(rec_ids) + 1), "ProductID": rec_ids})
 rec_df = rec_df.merge(product_lu, on="ProductID", how="left")
@@ -103,7 +124,7 @@ with left:
 
 
 with right:
-    st.subheader(f"Top {k} recommendations")
+    st.subheader(f"Top recommendations")
     # show most useful columns first if present
     # For recommendations, show the taxonomy columns directly (no long ProductLabel)
     preferred = [
