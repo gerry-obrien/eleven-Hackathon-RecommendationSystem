@@ -122,10 +122,16 @@ else:
         use_container_width=True
     )
 
-    st.caption(
-        "Basket proxy groups line-items into one shopping trip using (ClientID, StoreID, date). "
-        "This is a practical approximation when no BasketID/OrderID exists."
-    )
+st.caption(
+    "Basket proxy groups line-items into one shopping trip using (ClientID, StoreID, date). "
+    "This is a practical approximation when no BasketID/OrderID exists."
+)
+
+st.info(
+    "Slide export (exec comprehensive): "
+    "`.venv\\Scripts\\python.exe scripts/export_slide_plots.py --chart country_segment_comprehensive --preset country_segment_exec_wide` "
+    "-> `plots/country_segment_comprehensive_exec.png`"
+)
 
 st.divider()
 
